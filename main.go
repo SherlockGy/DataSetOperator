@@ -178,8 +178,13 @@ func main() {
 		resultEntry.SetText(sb.String())
 	})
 
+	copyButton := widget.NewButton("复制结果", func() {
+		w.Clipboard().SetContent(resultEntry.Text)
+		dialog.ShowInformation("复制成功", "结果已复制到剪贴板", w)
+	})
+
 	scrollContainer := container.NewScroll(resultEntry)
-	scrollContainer.SetMinSize(fyne.NewSize(600, 300)) // 设置结果文本框的最小大小
+	scrollContainer.SetMinSize(fyne.NewSize(600, 300))
 
 	content := container.NewBorder(
 		container.NewVBox(
@@ -193,7 +198,7 @@ func main() {
 			createSpacer(10),
 			calculateButton,
 		),
-		nil,
+		container.NewHBox(copyButton), // 将复制按钮放在底部
 		nil,
 		nil,
 		scrollContainer,
