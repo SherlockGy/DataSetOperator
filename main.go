@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bufio"
+	"DataSetOperator/utils/calcutils"
+	"DataSetOperator/utils/fileutils"
 	"fmt"
 	"image/color"
-	"os"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -15,52 +15,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
-
-func readFile(filename string) (map[string]struct{}, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	set := make(map[string]struct{})
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		set[scanner.Text()] = struct{}{}
-	}
-	return set, scanner.Err()
-}
-
-func intersection(set1, set2 map[string]struct{}) map[string]struct{} {
-	result := make(map[string]struct{})
-	for k := range set1 {
-		if _, ok := set2[k]; ok {
-			result[k] = struct{}{}
-		}
-	}
-	return result
-}
-
-func union(set1, set2 map[string]struct{}) map[string]struct{} {
-	result := make(map[string]struct{})
-	for k := range set1 {
-		result[k] = struct{}{}
-	}
-	for k := range set2 {
-		result[k] = struct{}{}
-	}
-	return result
-}
-
-func difference(set1, set2 map[string]struct{}) map[string]struct{} {
-	result := make(map[string]struct{})
-	for k := range set1 {
-		if _, ok := set2[k]; !ok {
-			result[k] = struct{}{}
-		}
-	}
-	return result
-}
 
 type myTheme struct{}
 
@@ -144,13 +98,13 @@ func main() {
 			return
 		}
 
-		set1, err1 := readFile(file1Path)
+		set1, err1 := fileutils.ReadFile(file1Path)
 		if err1 != nil {
 			dialog.ShowError(err1, w)
 			return
 		}
 
-		set2, err2 := readFile(file2Path)
+		set2, err2 := fileutils.ReadFile(file2Path)
 		if err2 != nil {
 			dialog.ShowError(err2, w)
 			return
@@ -160,11 +114,11 @@ func main() {
 
 		switch operationSelect.Selected {
 		case "交集":
-			result = intersection(set1, set2)
+			result = calcutils.Intersection(set1, set2)
 		case "并集":
-			result = union(set1, set2)
+			result = calcutils.Union(set1, set2)
 		case "差集":
-			result = difference(set1, set2)
+			result = calcutils.Difference(set1, set2)
 		default:
 			dialog.ShowError(fmt.Errorf("无效的操作"), w)
 			return
