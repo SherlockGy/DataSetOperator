@@ -3,13 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"os"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"os"
 )
 
 func readFile(filename string) (map[string]struct{}, error) {
@@ -67,8 +66,8 @@ func main() {
 
 	var file1Path, file2Path string
 
-	selectFile1Button := widget.NewButton("Select File 1", func() {
-		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
+	createFileDialog := func(callback func(string)) *dialog.FileDialog {
+		fd := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err != nil {
 				dialog.ShowError(err, w)
 				return
@@ -76,26 +75,29 @@ func main() {
 			if reader == nil {
 				return
 			}
-			file1Path = reader.URI().Path()
-			file1Label.SetText(fmt.Sprintf("File 1: %s", file1Path))
+			callback(reader.URI().Path())
 		}, w)
+		fd.Resize(fyne.NewSize(800, 600)) // 设置文件选择窗口的大小
+		return fd
+	}
+
+	selectFile1Button := widget.NewButton("Select File 1", func() {
+		fd := createFileDialog(func(path string) {
+			file1Path = path
+			file1Label.SetText(fmt.Sprintf("File 1: %s", file1Path))
+		})
+		fd.Show()
 	})
 
 	selectFile2Button := widget.NewButton("Select File 2", func() {
-		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
-			if err != nil {
-				dialog.ShowError(err, w)
-				return
-			}
-			if reader == nil {
-				return
-			}
-			file2Path = reader.URI().Path()
+		fd := createFileDialog(func(path string) {
+			file2Path = path
 			file2Label.SetText(fmt.Sprintf("File 2: %s", file2Path))
-		}, w)
+		})
+		fd.Show()
 	})
 
-	operations := []string{"Intersection", "Union", "Difference"}
+	operations := []string{"交集", "并集", "差集"}
 	operationSelect := widget.NewSelect(operations, nil)
 
 	resultArea := widget.NewMultiLineEntry()
@@ -122,11 +124,11 @@ func main() {
 		var result map[string]struct{}
 
 		switch operationSelect.Selected {
-		case "Intersection":
+		case "交集":
 			result = intersection(set1, set2)
-		case "Union":
+		case "并集":
 			result = union(set1, set2)
-		case "Difference":
+		case "差集":
 			result = difference(set1, set2)
 		default:
 			dialog.ShowError(fmt.Errorf("invalid operation"), w)
@@ -151,6 +153,6 @@ func main() {
 	)
 
 	w.SetContent(content)
-	w.Resize(fyne.NewSize(400, 300))
+	w.Resize(fyne.NewSize(800, 500)) // 增大主窗口的尺寸
 	w.ShowAndRun()
 }
