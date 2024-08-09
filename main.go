@@ -83,6 +83,12 @@ func (m myTheme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DefaultTheme().Size(name)
 }
 
+func createSpacer(height float32) fyne.CanvasObject {
+	spacer := canvas.NewRectangle(color.Transparent)
+	spacer.SetMinSize(fyne.NewSize(0, height))
+	return spacer
+}
+
 func main() {
 	a := app.New()
 	a.Settings().SetTheme(&myTheme{})
@@ -104,7 +110,7 @@ func main() {
 			}
 			callback(reader.URI().Path())
 		}, w)
-		fd.Resize(fyne.NewSize(800, 600)) // 设置文件选择窗口的大小
+		fd.Resize(fyne.NewSize(800, 600))
 		return fd
 	}
 
@@ -128,12 +134,13 @@ func main() {
 	operationSelect := widget.NewSelect(operations, nil)
 	operationSelect.PlaceHolder = "请选择操作"
 
-	resultText := canvas.NewText("", color.White)
-	resultText.TextStyle.Monospace = true
+	resultEntry := widget.NewMultiLineEntry()
+	resultEntry.Disable()
+	resultEntry.Wrapping = fyne.TextWrapBreak
 
 	calculateButton := widget.NewButton("计算", func() {
 		if file1Path == "" || file2Path == "" {
-			dialog.ShowError(fmt.Errorf("please select both files"), w)
+			dialog.ShowError(fmt.Errorf("请选择两个文件"), w)
 			return
 		}
 
@@ -159,38 +166,42 @@ func main() {
 		case "差集":
 			result = difference(set1, set2)
 		default:
-			dialog.ShowError(fmt.Errorf("非法的操作类型"), w)
+			dialog.ShowError(fmt.Errorf("无效的操作"), w)
 			return
 		}
 
-		// 使用 strings.Builder 来高效地构建字符串
 		var sb strings.Builder
 		for k := range result {
 			sb.WriteString(k)
-			sb.WriteString(string(os.PathListSeparator))
+			sb.WriteString("\n")
 		}
-		outputText := sb.String()
-
-		// 移除最后一个多余的换行符
-		if len(outputText) > 0 {
-			outputText = outputText[:len(outputText)-1]
-		}
-
-		resultText.Text = outputText
-		resultText.Refresh()
+		resultEntry.SetText(sb.String())
 	})
 
-	content := container.NewVBox(
-		selectFile1Button,
-		file1Label,
-		selectFile2Button,
-		file2Label,
-		operationSelect,
-		calculateButton,
-		container.NewScroll(resultText), // 使用滚动容器包装resultText
+	scrollContainer := container.NewScroll(resultEntry)
+	scrollContainer.SetMinSize(fyne.NewSize(600, 300)) // 设置结果文本框的最小大小
+
+	content := container.NewBorder(
+		container.NewVBox(
+			selectFile1Button,
+			file1Label,
+			createSpacer(10),
+			selectFile2Button,
+			file2Label,
+			createSpacer(10),
+			operationSelect,
+			createSpacer(10),
+			calculateButton,
+		),
+		nil,
+		nil,
+		nil,
+		scrollContainer,
 	)
 
-	w.SetContent(content)
-	w.Resize(fyne.NewSize(800, 500))
+	paddedContent := container.NewPadded(content)
+
+	w.SetContent(paddedContent)
+	w.Resize(fyne.NewSize(800, 600))
 	w.ShowAndRun()
 }
